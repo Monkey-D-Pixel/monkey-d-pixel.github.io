@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>TableSchedule.js Demo</title>
+    <link rel="stylesheet" href="../static/css/uikit.min.css">
+    <!-- <link rel="stylesheet" href="https://unpkg.com/table-schedule@0.1.0/dist/table-schedule.min.css"> -->
+    <link rel="stylesheet" href="table-schedule.min.css">
+    <link rel="stylesheet" href="../static/css/fa.min.css">
+    <link rel="stylesheet" href="../static/css/animate.min.css">
+    <!-- <link href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.1/styles/github.min.css" rel="stylesheet"> -->
+    <style>
+        .uk-navbar-item {
+            min-height: 60px;
+        }
+    </style>
+</head>
+<body class="uk-flex uk-flex-column" style="height:100vh">
+    <nav class="uk-navbar-container uk-navbar" uk-navbar>
+        <a class="uk-navbar-item uk-logo" href="#">TableSchedule.js <span class="uk-label">v0.1.0</span> Demo</a>
+        <div class="uk-navbar-right">
+            <div class="uk-navbar-item">
+                <a href="https://github.com/Monkey-D-Pixel/table-schedule">Github</a>
+            </div>
+        </div>
+    </nav>
+    <div class="uk-flex" style="overflow:hidden">
+        <div class="ts-wrapper" style="overflow:auto">
+            <table class="table-schedule"></table>
+        </div>
+        <div style="flex:0 0 200px;padding:5px 10px;">
+            <div class="uk-margin-bottom">
+                <div class="uk-button-group">
+                    <button class="uk-button uk-button-primary uk-button-small" id="addRandom" title="add a random event">
+                        </i><i class="fa fa-dice-three"></i>
+                    </button>
+                    <button class="uk-button uk-button-danger uk-button-small" id="clearBtn" title="clear all">
+                        </i><i class="fa fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="uk-margin-bottom">
+                <div class="uk-button-group">
+                    <button class="uk-button uk-button-default uk-button-small" id="prev" title="prev">
+                        </i><i class="fa fa-step-backward"></i>
+                    </button>
+                    <button class="uk-button uk-button-default uk-button-small" id="current" title="today">
+                        </i><i class="fa fa-dot-circle"></i>
+                    </button>
+                    <button class="uk-button uk-button-default uk-button-small" id="next" title="next">
+                        </i><i class="fa fa-step-forward"></i>
+                    </button>
+                </div>
+                <div style="font-size:small"><i class="fa fa-info-circle"></i> Data is not saved. In real case you might need to fetch all events data from somewhere when change startDate.</div>
+            </div>
+            <div class="uk-margin-bottom uk-hidden">
+                <label><input class="uk-checkbox" type="checkbox" id="directChange"> directChange</label>
+            </div>
+            <div class="uk-margin-bottom">
+                <label><input class="uk-checkbox" type="checkbox" id="quantizing" checked> quantizing</label>
+                <div style="font-size:small"><i class="fa fa-info-circle"></i> Hold/release <kbd>SHIFT</kbd> key and drag-n-drop to see the difference.</div>
+            </div>
+        </div>
+    </div>
+    <div id="formModal" uk-modal>
+        <div class="uk-modal-dialog">
+            <button class="uk-modal-close-default" type="button" uk-close></button>
+            <div class="uk-modal-header">
+                <h2 class="uk-modal-title">
+                    <span class="mode-display">Add</span> event
+                    <button type="button" class="uk-button uk-button-primary uk-button-small" id="fillRandom" title="feel lucky"><i class="fa fa-dice"></i></button>
+                </h2>
+            </div>
+            <div class="uk-modal-body">
+                <div class="uk-grid-small" uk-grid>
+                    <div class="uk-width-1-2">
+                        <label>
+                            Date
+                            <input type="date" id="eventDate" class="uk-input" autocomplete="off">
+                        </label>
+                    </div>
+                    <div class="uk-width-1-2">
+                        <label>
+                            Color
+                            <select id="eventClassName" class="uk-select">
+                            </select>
+                        </label>
+                    </div>
+                    <div class="uk-width-1-2">
+                        <label>
+                            Start time
+                            <input type="time" id="eventStart" class="uk-input" autocomplete="off">
+                        </label>
+                    </div>
+                    <div class="uk-width-1-2">
+                        <label>
+                            End time
+                            <input type="time" id="eventEnd" class="uk-input" autocomplete="off">
+                        </label>
+                    </div>
+                    <div class="uk-width-1-1">
+                        <label>
+                            Title
+                            <input type="text" id="eventTitle" class="uk-input" autocomplete="off" placeholder="a brief title">
+                        </label>
+                    </div>
+                    <div class="uk-width-1-1">
+                        <label>
+                            Content
+                            <textarea id="eventContent" rows="2" class="uk-textarea" autocomplete="off" placeholder="more detailed description"></textarea>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="uk-modal-footer uk-text-right">
+                <button class="uk-button uk-button-default uk-modal-close" type="button">Cancel</button>
+                <button class="uk-button uk-button-primary" type="button" id="saveBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="../static/js/uikit.min.js"></script>
+<!-- <script src="https://unpkg.com/table-schedule@0.1.0/dist/table-schedule.min.js"></script> -->
+<script src="table-schedule.js"></script>
+<!-- <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.1/highlight.min.js"></script> -->
+<script>
+(function() {
+    // hljs.initHighlightingOnLoad();
+
+    // https://github.com/uxitten/polyfill/blob/master/string.polyfill.js
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/padStart
+    if (!String.prototype.padStart) {
+        String.prototype.padStart = function padStart(targetLength,padString) {
+            targetLength = targetLength>>0; //floor if number or convert non-number to 0;
+            padString = String((typeof padString !== 'undefined' ? padString : ' '));
+            if (this.length > targetLength) {
+                return String(this);
+            }
+            else {
+                targetLength = targetLength-this.length;
+                if (targetLength > padString.length) {
+                    padString += padString.repeat(targetLength/padString.length); //append to original to ensure we are longer than needed
+                }
+                return padString.slice(0,targetLength) + String(this);
+            }
+        };
+    }
+    const $ = function(s) {
+        return document.querySelector(s)
+    }
+    const minuteToTimeStr = function(minute) {
+        let h = parseInt(minute / 60),
+            m = parseInt(minute % 60)
+        if (h < 10)
+            h = '0' + h
+        if (m < 10)
+            m = '0' + m
+        return h + ':' + m
+    }
+    const delegate = function(elem, type, selector, listener, options) {
+        elem.addEventListener(type, function(e) {
+            var el = e.target;
+            while (el && !el.matches(selector)) {
+                if (el === this) {
+                    el = null
+                    break
+                }
+                el = el.parentElement
+            }
+            listener = listener || function() {}
+            if (el) {
+                listener.call(el, e)
+            }
+        }, options)
+    }
+    const colors = [
+        'red',
+        'purple',
+        'indigo',
+        'blue',
+        'teal',
+        'green',
+        'yellow',
+        'orange',
+        'brown',
+    ]
+    const titles = [
+        'Mathematics 1a', 'Mathematics 1b', 'Mathematics 21b', 'Applied Mathematics 22a', 'Computer Science 50',
+        'Engineering Sciences 153', 'Applied Computation 221', 'Physics 123', 'Economics and Computation', 'Hardware and Networks',
+        'Programming Languages', 'Systems', 'Graphics, Visualization, and User Interfaces'
+    ]
+    const contents = [
+        'I will never be this young again. Ever. Oh damn… I just got older.',
+        'Writing a list of random sentences is harder than I initially thought it would be.',
+        'I love eating toasted cheese and tuna sandwiches.',
+        'The book is in front of the table.',
+        'He didn’t want to go to the dentist, yet he went anyway.',
+        'This is the last random sentence I will be writing and I am going to stop mid-sent',
+        'Wow, does that work?',
+        'I want to buy a onesie… but know it won’t suit me.',
+        'He told us a very exciting adventure story.',
+        'She borrowed the book from him many years ago and hasn\'t yet returned it.',
+        'Cats are good pets, for they are clean and are not noisy.',
+        'She was too short to see over the fence.',
+        'Sometimes, all you need to do is completely make an ass of yourself and laugh it off to realise that life isn’t so bad after all.',
+        'Everyone was busy, so I went to the movie alone.'
+    ]
+    
+    const state = {
+        today: new Date(),
+        mode: 'add',
+        editing: null,
+        startDate: new Date()
+    }
+
+    const $f = {
+        date: $('#eventDate'),
+        start: $('#eventStart'),
+        end: $('#eventEnd'),
+        className: $('#eventClassName'),
+        title: $('#eventTitle'),
+        content: $('#eventContent')
+    }
+
+    var $ts = $('.table-schedule')
+    var ts = new TableSchedule($ts)
+    window.$ts = $ts
+    window.ts = ts
+
+    function initComps() {
+        colors.forEach(function(c) {
+            var o = document.createElement('option')
+            var cn = 'event-' + c
+            o.setAttribute('value', cn)
+            o.innerText = '.' + cn
+            $f.className.appendChild(o)
+        })
+    }
+    function bindEvents() {
+        // TableSchedule events
+        $ts.addEventListener('create', function(e) {
+            var d = e.detail
+            console.log('create', d)
+            state.mode = 'add'
+            state.editing = null
+            $('.mode-display').innerText = 'Add'
+            fillForm(d.item)
+            UIkit.modal($('#formModal')).show()
+        })
+        $ts.addEventListener('modify', function(e) {
+            var d = e.detail
+            console.log('modify', d)
+            state.mode = 'edit'
+            state.editing = d.coords
+            $('.mode-display').innerText = 'Edit'
+            fillForm(Object.assign({}, d.item, d.mod))
+            UIkit.modal($('#formModal')).show()
+        })
+        $ts.addEventListener('remove', function(e) {
+            var d = e.detail
+            console.log('remove', d)
+            ts.deleteEvent(d.coords)
+        })
+        // you can delegate handler for handling click on event items
+        delegate($ts, 'click', '.event', function(e) {
+            var o = ts.getEvent(this) || {}
+            var nr = this.dataset['nr']
+            var dateIndex = this.parentElement.parentElement.dataset['index']
+            state.mode = 'edit'
+            state.editing = [dateIndex, nr]
+            $('.mode-display').innerText = 'Edit'
+            fillForm(o)
+            UIkit.modal($('#formModal')).show()
+        })
+        // directChange, quantizing can be toggled on the fly
+        $('#directChange').addEventListener('change', function() {
+            ts.config.directChange = this.checked
+        })
+        $('#quantizing').addEventListener('change', function() {
+            ts.config.quantizing = this.checked
+        })
+        // clear form inputs when it's hidden
+        $('#formModal').addEventListener('hidden', function() {
+            fillForm({})
+        })
+        // directly add a random event
+        $('#addRandom').addEventListener('click', function() {
+            var o = genRandomEvent()
+            ts.addEvent(o)
+            var el = ts.getElem(o)
+            el && el.scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'})
+            setTimeout(function() {
+                el.classList.add('animated', 'flash')
+            },200)
+            setTimeout(function() {
+                el.classList.remove('animated', 'flash')
+            },1000)
+        })
+        // fill the form with random values
+        $('#fillRandom').addEventListener('click', function() {
+            fillForm(genRandomEvent())
+        })
+        $('#saveBtn').addEventListener('click', function() {
+            var o = {}
+            for (var key in $f) {
+                if ($f[key].value) {
+                    o[key] = $f[key].value
+                }
+            }
+            if (state.editing) {
+                ts.updateEvent(state.editing, o)
+            } else {
+                ts.addEvent(o)
+            }
+            UIkit.modal($('#formModal')).hide()
+        })
+        $('#clearBtn').addEventListener('click', function() {
+            ts.clear()
+        })
+        $('#prev').addEventListener('click', function() {
+            state.startDate.setDate(state.startDate.getDate() - 7)
+            ts.changeStartDate(state.startDate)
+        })
+        $('#next').addEventListener('click', function() {
+            state.startDate.setDate(state.startDate.getDate() + 7)
+            ts.changeStartDate(state.startDate)
+        })
+        $('#current').addEventListener('click', function() {
+            state.startDate = new Date()
+            ts.changeStartDate(state.startDate)
+        })
+    }
+
+    function genRandomEvent() {
+        const randomR = function(l) {
+            return Math.floor(Math.random() * l)
+        }
+        var r = randomR(7)
+        var date = new Date(state.startDate)
+        date.setDate(date.getDate() + r)
+
+        const dayStart = 6
+        const dayEnd = 22
+        const maxDur = 120
+        const minDur = 30
+        const gap = 10
+        var startMin = dayStart * 60 + Math.floor((Math.random() * (dayEnd - maxDur / 60 - dayStart) * 60) / gap) * gap
+        var endMin = startMin + minDur + Math.floor(Math.random() * (maxDur - minDur) / gap) * gap
+        
+        r = randomR(titles.length)
+        var title = titles[r]
+        r = randomR(contents.length)
+        var content = contents[r]
+        r = randomR(colors.length)
+        var color = colors[r]
+        return {
+            date: date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2,'0') + '-' + date.getDate().toString().padStart(2,'0'),
+            start: minuteToTimeStr(startMin),
+            end: minuteToTimeStr(endMin),
+            className: 'event-' + color,
+            title: title,
+            content: content
+        }
+    }
+
+    function fillForm(obj) {
+        for (var key in $f) {
+            var v = obj[key] || ''
+            if (key == 'date') {
+                v = v.replace(/\//g, '-') // native date input only accepts 'yyyy-MM-dd'
+            }
+            $f[key].value = v
+        }
+    }
+
+    initComps()
+    bindEvents()
+
+    for (var i=0; i<10; i++) {
+        ts.addEvent(genRandomEvent())
+    }
+})()
+</script>
+</html>
